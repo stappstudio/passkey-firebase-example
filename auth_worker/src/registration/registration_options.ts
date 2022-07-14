@@ -1,13 +1,15 @@
 import { generateRegistrationOptions } from '@simplewebauthn/server'
 import { RP_ID, RP_NAME } from '../constants'
+import { jsonResponseDefaultOptions } from '../helpers'
 
 async function getRegistrationOptions(
-	request: Request
+	request: Request,
+	challengeKV: KVNamespace
 ): Promise<Response> {
 	let url = new URL(request.url);
 	let params = url.searchParams;
 
-	// We need id and name
+	// We need id and name because simplewebauthn/server requires both of them
 	let userID = params.get('id');
 	let userName = params.get('name');
 
@@ -17,13 +19,18 @@ async function getRegistrationOptions(
 				"error": "Missing parameters"
 			}),
 			{
+				...jsonResponseDefaultOptions(),
 				status: 400,
-				headers: {
-					'content-type': 'application/json;charset=UTF-8'
-				}
 			}
 		)
 	}
+
+	// Because of workers runtime being different than node runtime,
+	//     the built-in challenge generation on simplewebauthn/server does not work
+	// So, we create our own challenge with the same entropy 
+	// https://github.com/MasterKale/SimpleWebAuthn/blob/master/packages/server/src/helpers/generateChallenge.ts
+	let baseArray = new Int32Array(32)
+	let challenge = crypto.getRandomValues(baseArray)
 
 	const options = generateRegistrationOptions({
 		rpName: RP_NAME,
@@ -31,16 +38,15 @@ async function getRegistrationOptions(
 		userID,
 		userName,
 		attestationType: 'none',
-		challenge: '1234'
+		challenge: challenge
 	});
+
+	// Save challenge
+	await challengeKV.put(userID, options.challenge)
 
 	return new Response(
 		JSON.stringify(options),
-		{
-			headers: {
-				'content-type': 'application/json;charset=UTF-8'
-			}
-		}
+		jsonResponseDefaultOptions()
 	);
 }
 

@@ -16,6 +16,8 @@ const REGISTER_PATH = '/register'
 const REGISTER_OPTIONS_PATH = REGISTER_PATH + '/options'
 
 export interface Env {
+	// @ts-ignore
+	USER_CHALLENGES: USER_CHALLENGES;
 	// Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
 	// MY_KV_NAMESPACE: KVNamespace;
 	//
@@ -35,7 +37,7 @@ export default {
 		let url = new URL(request.url);
 		if (request.method == 'GET') {
 			if (url.pathname == REGISTER_OPTIONS_PATH) {
-				return getRegistrationOptions(request);
+				return getRegistrationOptions(request, env.USER_CHALLENGES);
 			}
 		}
 
