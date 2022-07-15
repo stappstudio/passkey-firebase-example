@@ -1,5 +1,6 @@
-import * as admin from "firebase-admin";
+import { initializeApp } from 'firebase-admin/app'
 
-admin.initializeApp()
+initializeApp()
 
 export { register } from './register'
+export { login } from './login'

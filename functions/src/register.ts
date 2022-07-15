@@ -1,10 +1,13 @@
-import * as admin from 'firebase-admin'
 import * as functions from 'firebase-functions'
 import * as express from 'express'
 import * as cors from 'cors'
 
 import { generateRegistrationOptions, verifyRegistrationResponse } from '@simplewebauthn/server'
+import { saveChallenge, getChallenge } from './data/challenge'
+import { saveAuthenticator } from './data/authenticator'
+
 import { ORIGIN, RP_ID, RP_NAME } from './constants'
+import { AuthenticatorDevice } from '@simplewebauthn/typescript-types'
 
 const registerApp = express()
 
@@ -32,9 +35,7 @@ registerApp.get('/options', async (req: express.Request, res: express.Response) 
       userName,
     })
 
-    await admin.firestore().collection('challenges').doc(userID).set({
-      challenge: options.challenge
-    })
+    await saveChallenge(userID, options.challenge)
 
     res.send(options)
   }
@@ -56,8 +57,7 @@ registerApp.post('/verify', async (req: express.Request, res: express.Response) 
   const userID = id as string
 
   try {
-    const challengeDoc = await admin.firestore().collection('challenges').doc(userID).get()
-    const expectedChallenge = challengeDoc.get('challenge')
+    const expectedChallenge = await getChallenge(userID)
 
     if (!expectedChallenge) {
       res.status(400).send({ error: 'Could not find challenge for user ' + userID })
@@ -71,6 +71,22 @@ registerApp.post('/verify', async (req: express.Request, res: express.Response) 
       expectedOrigin: ORIGIN,
       expectedRPID: RP_ID
     })
+
+    const { registrationInfo } = verification;
+
+    if (!verification.verified || !registrationInfo) {
+      throw Error('Error registering')
+    }
+
+    const { credentialPublicKey, credentialID, counter } = registrationInfo;
+
+    const newAuthenticator: AuthenticatorDevice = {
+      credentialID,
+      credentialPublicKey,
+      counter,
+    };
+
+    await saveAuthenticator(userID, newAuthenticator)
 
     res.send(verification)
   }
