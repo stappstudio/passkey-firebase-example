@@ -12,6 +12,6 @@
     "deploy": "wrangler publish"
   },
   "dependencies": {
-    "@simplewebauthn/server": "^5.3.0"
+    "@simplewebauthn/server": "file:../../SimpleWebAuthn/packages/server"
   }
 }

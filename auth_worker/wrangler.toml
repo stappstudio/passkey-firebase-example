@@ -2,3 +2,9 @@ name = "auth_worker"
 main = "src/index.ts"
 compatibility_date = "2022-07-14"
 node_compat = true
+
+account_id = "575c7e7e53e85bb9be17c85fece7f21f"
+
+kv_namespaces = [
+    { binding = "USER_CHALLENGES", preview_id = "8032a49cfcce4cb292bb34ba2b74701f", id = "d78260acea1b4a1188ca81299e5be279" }
+]

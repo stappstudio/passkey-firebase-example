@@ -29,7 +29,7 @@ async function getRegistrationOptions(
 	//     the built-in challenge generation on simplewebauthn/server does not work
 	// So, we create our own challenge with the same entropy 
 	// https://github.com/MasterKale/SimpleWebAuthn/blob/master/packages/server/src/helpers/generateChallenge.ts
-	let baseArray = new Int32Array(32)
+	let baseArray = new Int8Array(32)
 	let challenge = crypto.getRandomValues(baseArray)
 
 	const options = generateRegistrationOptions({
