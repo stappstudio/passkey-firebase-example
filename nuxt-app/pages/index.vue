@@ -7,12 +7,13 @@
       <label class="form-label text-stapp-blue">Username</label>
       <input v-model="form.username" type="text" class="form-input focus:outline-stapp-pink"  />
       <button class="bg-stapp-pink p-2 my-4 text-white rounded-lg" @click="register">Register</button>
+      <button class="bg-stapp-blue p-2 my-4 text-white rounded-lg" @click="login">Login</button>
     </div>
   </div>
 </template>
 
 <script setup>
-  import { startRegistration } from '@simplewebauthn/browser';
+  import { startRegistration, startAuthentication } from '@simplewebauthn/browser';
 
   const API_URL = 'http://localhost:5001/passkey-example/us-central1'
 
@@ -43,8 +44,6 @@
       }
     })
 
-    console.log(response)
-
     return response
   }
 
@@ -60,7 +59,45 @@
       }
     })
 
-    console.log(response)
+    return response
+  }
+
+  async function login() {
+    const options = await getAuthenticationOptions()
+
+    try {
+      const asseResp = await startAuthentication(options)
+
+      console.log(asseResp)
+      const verification = await verifyAuthentication(asseResp)
+      console.log(asseResp)
+    }
+    catch (error) {
+      console.log(error)
+    }
+  }
+
+  async function getAuthenticationOptions() {
+    const response = await $fetch(API_URL + '/login/options', {
+      params: {
+        id: form.username
+      }
+    })
+
+    return response
+  }
+
+  async function verifyAuthentication(asseResp) {
+    const response = await $fetch(API_URL + '/login/verify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: asseResp,
+      params: {
+        id: form.username,
+      }
+    })
 
     return response
   }
