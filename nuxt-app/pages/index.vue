@@ -14,7 +14,7 @@
 <script setup>
   import { startRegistration } from '@simplewebauthn/browser';
 
-  const API_URL = 'http://localhost:8787'
+  const API_URL = 'http://localhost:5001/passkey-example/us-central1'
 
   const form = {
     username: '',
