@@ -1,8 +1,8 @@
 // Human-readable title for your website
-const RP_NAME = 'SimpleWebAuthn Example';
+const RP_NAME = 'Stapp Studio Passkey Example';
 // A unique identifier for your website
-const RP_ID = 'localhost';
+const RP_ID = 'passkey.stapp.studio';
 // The URL at which registrations and authentications should occur
-const ORIGIN = `http://${RP_ID}:3000`;
+const ORIGIN = `http://${RP_ID}`;
 
 export { RP_NAME, RP_ID, ORIGIN }
