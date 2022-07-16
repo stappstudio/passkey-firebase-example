@@ -14,7 +14,9 @@ const loginApp = express()
 loginApp.use(express.json())
 loginApp.use(cors())
 
-loginApp.get('/options', async (req: express.Request, res: express.Response) => {
+loginApp.get(
+  ['/options', '/login/options'],
+  async (req: express.Request, res: express.Response) => {
   const { id } = req.query
 
   // Validate parameters
@@ -46,7 +48,9 @@ loginApp.get('/options', async (req: express.Request, res: express.Response) => 
   }
 })
 
-loginApp.post('/verify', async (req: express.Request, res: express.Response) => {
+loginApp.post(
+  ['/verify', '/login/verify'],
+  async (req: express.Request, res: express.Response) => {
   const { id } = req.query
 
   // Validate parameters

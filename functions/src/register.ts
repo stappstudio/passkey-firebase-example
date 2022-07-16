@@ -14,8 +14,12 @@ const registerApp = express()
 registerApp.use(express.json())
 registerApp.use(cors())
 
-registerApp.get('/options', async (req: express.Request, res: express.Response) => {
+registerApp.get(
+  ['/options', '/register/options'],
+  async (req: express.Request, res: express.Response) => {
   const { id, name } = req.query
+
+  console.log(req.url)
 
   // Validate parameters
   if (!id || !name) {
@@ -44,7 +48,9 @@ registerApp.get('/options', async (req: express.Request, res: express.Response) 
   }
 })
 
-registerApp.post('/verify', async (req: express.Request, res: express.Response) => {
+registerApp.post(
+  ['/verify', '/register/verify'],
+  async (req: express.Request, res: express.Response) => {
   const { id } = req.query
 
   // Validate parameters
