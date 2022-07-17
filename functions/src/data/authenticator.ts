@@ -55,3 +55,13 @@ export async function getUserAuthenticator(userEmail: string, credentialID: stri
 
   return authenticator
 }
+
+export async function cleanAuthenticators() {
+  const firestore = getFirestore()
+  const batch = firestore.batch()
+
+  const authenticators = await firestore.collection(COLLECTION).listDocuments()
+  authenticators.forEach((a) => batch.delete(a))
+
+  await batch.commit()
+}

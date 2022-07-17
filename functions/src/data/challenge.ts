@@ -18,3 +18,13 @@ export async function getChallenge(userID: string): Promise<string> {
 
   return expectedChallenge
 }
+
+export async function cleanChallenges() {
+  const firestore = getFirestore()
+  const batch = firestore.batch()
+
+  const challenges = await firestore.collection(COLLECTION).listDocuments()
+  challenges.forEach((c) => batch.delete(c))
+
+  await batch.commit()
+}

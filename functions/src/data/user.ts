@@ -36,3 +36,13 @@ export async function getUserCustomToken(userEmail: string): Promise<string> {
 
   return customToken
 }
+
+export async function cleanUsers() {
+  const auth = getAuth()
+  
+  const result = await auth.listUsers()
+
+  const uids = result.users.map((u) => u.uid)
+
+  await auth.deleteUsers(uids)
+}
