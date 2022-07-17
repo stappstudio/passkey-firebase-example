@@ -18,7 +18,7 @@
       <label class="form-label opacity-30 text-stapp-blue">Senha</label>
       <input type="text" value="Senha? Pra quê isso?" disabled class="opacity-30 form-input focus:outline-stapp-pink"  />
       <div class="w-full flex flex-col mt-4">
-        <button v-if="isFormSignup" class="form-button bg-stapp-blue" @click="register">Register</button>
+        <button v-if="isFormSignup" class="form-button bg-stapp-blue" @click="register">Cadastrar-se</button>
         <button v-else class="form-button bg-stapp-pink" @click="login">Fazer Login</button>
         <button v-if="isFormSignup" class="text-stapp-pink mt-4 hover:underline" @click="isFormSignup = false">Já tenho cadastro</button>
         <button v-else class="text-stapp-blue mt-4 hover:underline" @click="isFormSignup = true">Ainda não tenho cadastro</button>
@@ -30,6 +30,7 @@
 <script setup>
   import { startRegistration, startAuthentication } from '@simplewebauthn/browser'
   import { getAuth, signInWithCustomToken } from 'firebase/auth'
+import { FetchError } from 'ohmyfetch';
 import CustomLoading from '../components/custom-loading.vue'
 
   const API_URL = 'https://passkey.stapp.studio'
@@ -66,6 +67,10 @@ import CustomLoading from '../components/custom-loading.vue'
   async function register() {
     hasPressedAnySubmitButton.value = true
 
+    if (!form.name || !form.email) {
+      return
+    }
+
     try {
       isLoading.value = true
       const options = await getRegistrationOptions()
@@ -75,17 +80,24 @@ import CustomLoading from '../components/custom-loading.vue'
       const verification = await verifyRegistration(attResp)
 
       if (verification.verified) {
-        alert('Cadastrado!')
+        alert('Usuário cadastrado!')
+        isFormSignup.value = false
       }
       else {
-        alert('Deu ruim :()')
+        alert('Ocorreu um erro ao cadastrar')
       }
 
       isLoading.value = false
     }
     catch (error) {
+      if (error instanceof FetchError) {
+        alert(error.data.error)
+      }
+      else {
+        console.log(error)
+        alert(error)
+      }
       isLoading.value = false
-      console.log(error)
     }
   }
 
@@ -118,25 +130,40 @@ import CustomLoading from '../components/custom-loading.vue'
   async function login() {
     hasPressedAnySubmitButton.value = true
 
-    if (!form.email || form.email.length == 0) {
+    if (!form.email) {
       return
     }
 
-    const options = await getAuthenticationOptions()
 
     try {
+      isLoading.value = true
+
+      const options = await getAuthenticationOptions()
       const asseResp = await startAuthentication(options)
 
       const { token } = await verifyAuthentication(asseResp)
 
       const auth = getAuth()
       const credential = await signInWithCustomToken(auth, token)
+      
       if (credential && credential.user) {
         await navigateTo('/secret')
       }
+      else {
+        alert('Erro ao realizar o login :(')
+      }
+      
+      isLoading.value = false
     }
     catch (error) {
-      console.log(error)
+      if (error instanceof FetchError) {
+        alert(error.data.error)
+      }
+      else {
+        console.log(error)
+        alert(error)
+        isLoading.value = false
+      }
     }
   }
 

@@ -21,10 +21,10 @@ export default defineNuxtPlugin(async nuxtApp => {
 
   await startAuthListener()
 
-  onIdTokenChanged(getAuth(), async (user) => {
-    if (user != null) {
-      const token = await user.getIdToken()
-      console.log(`firebase token: ${token}`)
-    }
-  })
+  // onIdTokenChanged(getAuth(), async (user) => {
+  //   if (user != null) {
+  //     const token = await user.getIdToken()
+  //     console.log(`firebase token: ${token}`)
+  //   }
+  // })
 })
