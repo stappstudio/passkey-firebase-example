@@ -4,21 +4,21 @@ import base64url from 'base64url';
 
 const COLLECTION = 'authenticators'
 
-export async function saveAuthenticator(userID: string, authenticator: AuthenticatorDevice) {
+export async function saveAuthenticator(userEmail: string, authenticator: AuthenticatorDevice) {
   const firestore = getFirestore()
 
   await firestore.collection(COLLECTION).doc().set({
-    userID,
+    userEmail,
     credentialPublicKey: base64url.encode(authenticator.credentialPublicKey),
     credentialID: base64url.encode(authenticator.credentialID),
     counter: authenticator.counter
   })
 }
 
-export async function getAllUserAuthenticators(userID: string): Promise<AuthenticatorDevice[]> {
+export async function getAllUserAuthenticators(userEmail: string): Promise<AuthenticatorDevice[]> {
   const firestore = getFirestore()
 
-  const snapshot = await firestore.collection(COLLECTION).where('userID', '==', userID).get()
+  const snapshot = await firestore.collection(COLLECTION).where('userEmail', '==', userEmail).get()
 
   const authenticators: AuthenticatorDevice[] = []
 
@@ -34,11 +34,11 @@ export async function getAllUserAuthenticators(userID: string): Promise<Authenti
   return authenticators
 }
 
-export async function getUserAuthenticator(userID: string, credentialID: string): Promise<AuthenticatorDevice | undefined> {
+export async function getUserAuthenticator(userEmail: string, credentialID: string): Promise<AuthenticatorDevice | undefined> {
   const firestore = getFirestore()
 
   const snapshot = await firestore.collection(COLLECTION)
-    .where('userID', '==', userID)
+    .where('userEmail', '==', userEmail)
     .where('credentialID', '==', credentialID)
     .get()
 

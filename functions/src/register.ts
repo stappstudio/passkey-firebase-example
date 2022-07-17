@@ -5,6 +5,7 @@ import * as cors from 'cors'
 import { generateRegistrationOptions, verifyRegistrationResponse } from '@simplewebauthn/server'
 import { saveChallenge, getChallenge } from './data/challenge'
 import { saveAuthenticator } from './data/authenticator'
+import { userEmailAlreadyRegistered, createUser } from './data/user'
 
 import { ORIGIN, RP_ID, RP_NAME } from './constants'
 import { AuthenticatorDevice } from '@simplewebauthn/typescript-types'
@@ -17,29 +18,38 @@ registerApp.use(cors())
 registerApp.get(
   ['/options', '/register/options'],
   async (req: express.Request, res: express.Response) => {
-  const { id, name } = req.query
+  const { email, name } = req.query
 
-  console.log(req.url)
-
-  // Validate parameters
-  if (!id || !name) {
+  // Validate query parameters
+  if (!email || !name) {
     res.status(400).send({ error: 'Missing required parameters' })
 
     return
   }
 
-  const userID = id as string
+  const userEmail = email as string
   const userName = name as string
 
+  // Check if user already registered on firebase
+  const alreadyRegistered = await userEmailAlreadyRegistered(userEmail)
+
+  if (alreadyRegistered) {
+    res.status(400).send({ error: `${userEmail} already registered!` })
+
+    return
+  }
+
   try {
+    // Generate registration options
     const options = generateRegistrationOptions({
       rpName: RP_NAME,
       rpID: RP_ID,
-      userID,
+      userID: userEmail,
       userName,
     })
 
-    await saveChallenge(userID, options.challenge)
+    // Save the challenge on firestore to retrieve them later
+    await saveChallenge(userEmail, options.challenge)
 
     res.send(options)
   }
@@ -51,22 +61,23 @@ registerApp.get(
 registerApp.post(
   ['/verify', '/register/verify'],
   async (req: express.Request, res: express.Response) => {
-  const { id } = req.query
+  const { email } = req.query
 
   // Validate parameters
-  if (!id) {
+  if (!email) {
     res.status(400).send({ error: 'Missing required parameters' })
 
     return
   }
 
-  const userID = id as string
+  const userEmail = email as string
 
   try {
-    const expectedChallenge = await getChallenge(userID)
+    // Retrieve the challenge from firestore
+    const expectedChallenge = await getChallenge(userEmail)
 
     if (!expectedChallenge) {
-      res.status(400).send({ error: 'Could not find challenge for user ' + userID })
+      res.status(400).send({ error: 'Could not find challenge for user ' + userEmail })
   
       return
     }
@@ -81,8 +92,16 @@ registerApp.post(
     const { registrationInfo } = verification;
 
     if (!verification.verified || !registrationInfo) {
-      throw Error('Error registering')
+      console.log(JSON.stringify(verification))
+      res.status(400).send({ error: 'Error verifying info for user ' + userEmail })
+  
+      return
     }
+
+    // Registration complete!
+
+    // Create the user on Firebase Auth
+    await createUser(userEmail)
 
     const { credentialPublicKey, credentialID, counter } = registrationInfo;
 
@@ -92,11 +111,14 @@ registerApp.post(
       counter,
     };
 
-    await saveAuthenticator(userID, newAuthenticator)
+    await saveAuthenticator(userEmail, newAuthenticator)
 
     res.send(verification)
   }
   catch (error) {
+    functions.logger.error('Error', {
+      "error": error
+    })
     res.status(400).send(error)
   }
 })

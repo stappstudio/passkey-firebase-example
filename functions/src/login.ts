@@ -5,6 +5,7 @@ import * as cors from 'cors'
 import { generateAuthenticationOptions, verifyAuthenticationResponse } from '@simplewebauthn/server'
 import { saveChallenge, getChallenge } from './data/challenge'
 import { getAllUserAuthenticators, getUserAuthenticator } from './data/authenticator'
+import { userEmailAlreadyRegistered, getUserCustomToken } from './data/user'
 
 import { ORIGIN, RP_ID } from './constants'
 // import { AuthenticatorDevice } from '@simplewebauthn/typescript-types'
@@ -17,18 +18,27 @@ loginApp.use(cors())
 loginApp.get(
   ['/options', '/login/options'],
   async (req: express.Request, res: express.Response) => {
-  const { id } = req.query
+  const { email } = req.query
 
   // Validate parameters
-  if (!id) {
+  if (!email) {
     res.status(400).send({ error: 'Missing required parameters' })
 
     return
   }
 
-  const userID = id as string
+  const userEmail = email as string
 
-  const userAuthenticators = await getAllUserAuthenticators(userID)
+  // Check if user already registered on firebase
+  const alreadyRegistered = await userEmailAlreadyRegistered(userEmail)
+
+  if (!alreadyRegistered) {
+    res.status(400).send({ error: `${userEmail} not registered!` })
+
+    return
+  }
+
+  const userAuthenticators = await getAllUserAuthenticators(userEmail)
 
   try {
     const options = generateAuthenticationOptions({
@@ -39,7 +49,7 @@ loginApp.get(
       userVerification: 'preferred'
     })
 
-    await saveChallenge(userID, options.challenge)
+    await saveChallenge(userEmail, options.challenge)
 
     res.send(options)
   }
@@ -51,38 +61,35 @@ loginApp.get(
 loginApp.post(
   ['/verify', '/login/verify'],
   async (req: express.Request, res: express.Response) => {
-  const { id } = req.query
+  const { email } = req.query
 
   // Validate parameters
-  if (!id) {
+  if (!email) {
     res.status(400).send({ error: 'Missing required parameters' })
 
     return
   }
 
-  const userID = id as string
+  const userEmail = email as string
 
   try {
-    const expectedChallenge = await getChallenge(userID)
+    const expectedChallenge = await getChallenge(userEmail)
 
     if (!expectedChallenge) {
-      res.status(400).send({ error: 'Could not find challenge for user ' + userID })
+      res.status(400).send({ error: 'Could not find challenge for user ' + userEmail })
   
       return
     }
 
     const { body } = req
 
-    const authenticator = await getUserAuthenticator(userID, body.id)
+    const authenticator = await getUserAuthenticator(userEmail, body.id)
 
     if (!authenticator) {
-      res.status(400).send({ error: 'Could not find authenticator ' + body.id + ' for user ' + userID })
+      res.status(400).send({ error: 'Could not find authenticator ' + body.id + ' for user ' + userEmail })
   
       return
     }
-
-    console.log('authenticator ok')
-    console.log(authenticator)
 
     const verification = verifyAuthenticationResponse({
       credential: req.body,
@@ -92,11 +99,6 @@ loginApp.post(
       authenticator
     })
 
-    console.log('verified response')
-
-    console.log(verification)
-    console.log(verification.verified)
-
     const { authenticationInfo } = verification;
 
     if (!verification.verified || !authenticationInfo) {
@@ -104,20 +106,20 @@ loginApp.post(
       throw Error('Error authenticating')
     }
 
-    // const { credentialPublicKey, credentialID, counter } = authenticationInfo;
+    // TODO: Update authenticator counter on database
 
-    // const newAuthenticator: AuthenticatorDevice = {
-    //   credentialID,
-    //   credentialPublicKey,
-    //   counter,
-    // };
+    // Retrieve token from firebase auth
+    functions.logger.info('Will retrieve user custom token')
+    const customToken = await getUserCustomToken(userEmail)
 
-    // await saveAuthenticator(userID, newAuthenticator)
-
-    res.send(verification)
+    res.send({
+      "token": customToken
+    })
   }
   catch (error) {
-    console.log(error)
+    functions.logger.error('Error', {
+      "error": error
+    })
     res.status(400).send(error)
   }
 })
