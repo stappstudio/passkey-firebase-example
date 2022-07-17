@@ -11,6 +11,10 @@
     "nuxt": "3.0.0-rc.5"
   },
   "dependencies": {
-    "@simplewebauthn/browser": "^5.3.0"
+    "@pinia/nuxt": "^0.3.0",
+    "@simplewebauthn/browser": "^5.3.0",
+    "firebase": "9.8.0",
+    "pinia": "^2.0.16",
+    "vue": "^3.2.37"
   }
 }
