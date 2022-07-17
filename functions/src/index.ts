@@ -5,6 +5,4 @@ initializeApp()
 
 export { register } from './register'
 export { login } from './login'
-import { cleanup } from './cleanup'
-
-exports.scheduledFunctionCrontab = cleanup
+export { cleanup } from './cleanup'
