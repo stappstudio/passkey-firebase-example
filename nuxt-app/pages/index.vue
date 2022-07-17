@@ -16,6 +16,7 @@
   import { startRegistration, startAuthentication } from '@simplewebauthn/browser';
 
   const API_URL = 'https://passkey.stapp.studio'
+  // const API_URL = 'http://localhost:5001/passkey-example/us-central1'
 
   const form = {
     username: '',
