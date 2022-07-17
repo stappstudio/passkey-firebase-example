@@ -1,14 +1,27 @@
 <template>
   <div class="w-full h-full flex justify-center items-center">
-    <div class="p-8 rounded-xl shadow-lg">
-      <img class="w-64" src="~assets/logo_1024.png" />
-      <label class="form-label text-stapp-blue">Full Name</label>
-      <input v-model="form.name" type="text" class="form-input focus:outline-stapp-pink"  />
-      <label class="form-label text-stapp-blue">E-mail</label>
-      <input v-model="form.email" type="text" class="form-input focus:outline-stapp-pink"  />
-      <div class="flex justify-between">
-        <button class="bg-stapp-pink p-2 my-4 text-white rounded-lg" @click="register">Register</button>
-        <button class="bg-stapp-blue p-2 my-4 text-white rounded-lg" @click="login">Login</button>
+    <div class="relative m-4 p-8 rounded-xl shadow-xl flex flex-col items-center overflow-hidden">
+      <div v-if="isLoading" class="absolute left-0 top-0 right-0 bottom-0 bg-white bg-opacity-50 flex justify-center items-center">
+        <CustomLoading />
+      </div>
+      <img class="w-48" src="~assets/logo_1024.png" />
+      <div>
+        <label v-if="isFormSignup" class="form-label text-stapp-blue">Nome</label>
+        <input v-if="isFormSignup" v-model="form.name" type="text" class="form-input" :class="classesForInput('name')" />
+        <label class="form-error" :class="{ hidden: !(hasPressedAnySubmitButton && !form.name) }">Campo obrigatório</label>
+      </div>
+      <div class="flex flex-col items-end">
+        <label class="form-label text-stapp-blue">E-mail</label>
+        <input v-model="form.email" type="text" class="w-full form-input" :class="classesForInput('email')" />
+        <label class="form-error" :class="{ hidden: !(hasPressedAnySubmitButton && !form.email) }">Campo obrigatório</label>
+      </div>
+      <label class="form-label opacity-30 text-stapp-blue">Senha</label>
+      <input type="text" value="Senha? Pra quê isso?" disabled class="opacity-30 form-input focus:outline-stapp-pink"  />
+      <div class="w-full flex flex-col mt-4">
+        <button v-if="isFormSignup" class="form-button bg-stapp-blue" @click="register">Register</button>
+        <button v-else class="form-button bg-stapp-pink" @click="login">Fazer Login</button>
+        <button v-if="isFormSignup" class="text-stapp-pink mt-4 hover:underline" @click="isFormSignup = false">Já tenho cadastro</button>
+        <button v-else class="text-stapp-blue mt-4 hover:underline" @click="isFormSignup = true">Ainda não tenho cadastro</button>
       </div>
     </div>
   </div>
@@ -17,10 +30,8 @@
 <script setup>
   import { startRegistration, startAuthentication } from '@simplewebauthn/browser'
   import { getAuth, signInWithCustomToken } from 'firebase/auth'
+import CustomLoading from '../components/custom-loading.vue'
 
-
-
-  // const API_URL = 'http://localhost:5001/passkey-example/us-central1'
   const API_URL = 'https://passkey.stapp.studio'
 
   const form = {
@@ -28,16 +39,52 @@
     name: ''
   }
 
+  const isFormSignup = ref(false)
+  const hasPressedAnySubmitButton = ref(false)
+  const isLoading = ref(false)
+
+  // View functions
+  function classesForInput(field) {
+    var expectedValue;
+    if (field == 'email') {
+      expectedValue = form.email
+    }
+    else {
+      expectedValue = form.name
+    }
+
+    const hasError = hasPressedAnySubmitButton.value && !expectedValue
+
+    return {
+      'outline-red-500': hasError,
+      'outline-gray-300': !hasError,
+      'focus:outline-stapp-pink': !hasError
+    }
+  }
+
+  // Register/Login backend methods
   async function register() {
-    const options = await getRegistrationOptions()
+    hasPressedAnySubmitButton.value = true
 
     try {
+      isLoading.value = true
+      const options = await getRegistrationOptions()
+      
       const attResp = await startRegistration(options)
 
       const verification = await verifyRegistration(attResp)
-      // TODO: Check for verification.verified
+
+      if (verification.verified) {
+        alert('Cadastrado!')
+      }
+      else {
+        alert('Deu ruim :()')
+      }
+
+      isLoading.value = false
     }
     catch (error) {
+      isLoading.value = false
       console.log(error)
     }
   }
@@ -69,6 +116,12 @@
   }
 
   async function login() {
+    hasPressedAnySubmitButton.value = true
+
+    if (!form.email || form.email.length == 0) {
+      return
+    }
+
     const options = await getAuthenticationOptions()
 
     try {
@@ -114,11 +167,26 @@
 </script>
 
 <style lang="pcss">
+html, body, #__nuxt, #__layout {
+      height:100%; /*both html and body*/
+}
+body {
+    margin: 0; /*reset default margin*/
+}
+
 .form-label {
-  @apply block text-stapp-blue my-2
+  @apply block text-stapp-blue my-2 w-64
 }
 
 .form-input {
-  @apply block outline outline-1 rounded-lg outline-gray-300 p-2
+  @apply w-full block outline outline-1 rounded-lg p-2
+}
+
+.form-button {
+  @apply w-full block py-2 px-8 my-1 text-white rounded-lg
+}
+
+.form-error {
+  @apply my-1 text-red-500 text-xs;
 }
 </style>
