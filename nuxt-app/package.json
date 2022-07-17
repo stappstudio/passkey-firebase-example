@@ -4,7 +4,8 @@
     "build": "nuxt build",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
-    "preview": "nuxt preview"
+    "preview": "nuxt preview",
+    "deploy": "npm run generate && firebase deploy --only hosting"
   },
   "devDependencies": {
     "@nuxtjs/tailwindcss": "^5.3.0",

@@ -4,48 +4,27 @@
       <img class="w-64" src="~assets/logo_1024.png" />
       <label class="form-label text-stapp-blue">Full Name</label>
       <input v-model="form.name" type="text" class="form-input focus:outline-stapp-pink"  />
-      <label class="form-label text-stapp-blue">Username</label>
-      <input v-model="form.username" type="text" class="form-input focus:outline-stapp-pink"  />
+      <label class="form-label text-stapp-blue">E-mail</label>
+      <input v-model="form.email" type="text" class="form-input focus:outline-stapp-pink"  />
       <div class="flex justify-between">
         <button class="bg-stapp-pink p-2 my-4 text-white rounded-lg" @click="register">Register</button>
         <button class="bg-stapp-blue p-2 my-4 text-white rounded-lg" @click="login">Login</button>
       </div>
-
-      <button class="text-stapp-pink" @click="loginFire">Login</button>
-      <button class="text-stapp-pink" @click="logout">Logout</button>
     </div>
   </div>
 </template>
 
 <script setup>
   import { startRegistration, startAuthentication } from '@simplewebauthn/browser'
-  import { useStore } from '@/stores/user'
-  import { getAuth, signInWithEmailAndPassword, signOut } from 'firebase/auth'
+  import { getAuth, signInWithCustomToken } from 'firebase/auth'
 
-  async function loginFire() {
-    const auth = getAuth()
-    try {
-      const credentials = signInWithEmailAndPassword(
-        auth,
-        'email',
-        'senha'
-      )
-      console.log(credentials)
-    }
-    catch (error) {
-      console.log(error)
-    }
-  }
 
-  async function logout() {
-    const auth = getAuth()
-    await signOut(auth)
-  }
 
+  // const API_URL = 'http://localhost:5001/passkey-example/us-central1'
   const API_URL = 'https://passkey.stapp.studio'
 
   const form = {
-    username: '',
+    email: '',
     name: ''
   }
 
@@ -56,7 +35,7 @@
       const attResp = await startRegistration(options)
 
       const verification = await verifyRegistration(attResp)
-      console.log(verification)
+      // TODO: Check for verification.verified
     }
     catch (error) {
       console.log(error)
@@ -66,7 +45,7 @@
   async function getRegistrationOptions() {
     const response = await $fetch(API_URL + '/register/options', {
       params: {
-        id: form.username,
+        email: form.email,
         name: form.name
       }
     })
@@ -82,7 +61,7 @@
       },
       body: attResp,
       params: {
-        id: form.username,
+        email: form.email,
       }
     })
 
@@ -95,9 +74,13 @@
     try {
       const asseResp = await startAuthentication(options)
 
-      console.log(asseResp)
-      const verification = await verifyAuthentication(asseResp)
-      console.log(asseResp)
+      const { token } = await verifyAuthentication(asseResp)
+
+      const auth = getAuth()
+      const credential = await signInWithCustomToken(auth, token)
+      if (credential && credential.user) {
+        await navigateTo('/secret')
+      }
     }
     catch (error) {
       console.log(error)
@@ -107,7 +90,7 @@
   async function getAuthenticationOptions() {
     const response = await $fetch(API_URL + '/login/options', {
       params: {
-        id: form.username
+        email: form.email
       }
     })
 
@@ -122,7 +105,7 @@
       },
       body: asseResp,
       params: {
-        id: form.username,
+        email: form.email,
       }
     })
 
