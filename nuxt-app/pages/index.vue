@@ -8,11 +8,11 @@
       <div>
         <label v-if="isFormSignup" class="form-label text-stapp-blue">Nome</label>
         <input v-if="isFormSignup" v-model="form.name" type="text" class="form-input" :class="classesForInput('name')" />
-        <label class="form-error" :class="{ hidden: !(hasPressedAnySubmitButton && !form.name) }">Campo obrigatório</label>
+        <label class="form-error" :class="{ hidden: !(isFormSignup && hasPressedAnySubmitButton && !form.name) }">Campo obrigatório</label>
       </div>
       <div class="flex flex-col items-end">
         <label class="form-label text-stapp-blue">E-mail</label>
-        <input v-model="form.email" type="text" class="w-full form-input" :class="classesForInput('email')" />
+        <input v-model="form.email" autocomplete="webauthn" type="text" class="w-full form-input" :class="classesForInput('email')" />
         <label class="form-error" :class="{ hidden: !(hasPressedAnySubmitButton && !form.email) }">Campo obrigatório</label>
       </div>
       <label class="form-label opacity-30 text-stapp-blue">Senha</label>
@@ -27,11 +27,13 @@
   </div>
 </template>
 
-<script setup>
+<script lang="ts" setup>
   import { startRegistration, startAuthentication } from '@simplewebauthn/browser'
+  import { AuthenticationCredentialJSON, PublicKeyCredentialCreationOptionsJSON, PublicKeyCredentialRequestOptionsJSON, RegistrationCredentialJSON } from '@simplewebauthn/typescript-types'
   import { getAuth, signInWithCustomToken } from 'firebase/auth'
-import { FetchError } from 'ohmyfetch';
-import CustomLoading from '../components/custom-loading.vue'
+  import { FetchError } from 'ohmyfetch';
+  import { Buffer } from 'buffer';
+  import CustomLoading from '../components/custom-loading.vue'
 
   const API_URL = 'https://passkey.stapp.studio'
 
@@ -44,9 +46,30 @@ import CustomLoading from '../components/custom-loading.vue'
   const hasPressedAnySubmitButton = ref(false)
   const isLoading = ref(false)
 
+  const sessionId = generateSessionId()
+
   // View functions
-  function classesForInput(field) {
-    var expectedValue;
+  onMounted(async () => {
+    const options = await getAuthenticationOptions(undefined)
+    const asseResp = await startAuthentication(options, true)
+
+    const { token } = await verifyAuthentication(asseResp)
+
+    await firebaseLogin(token)
+  })
+
+  // Since our backend is serverless, we don't have sessions to save our challenges into
+  // So, we generate it here on the browser and pass this id to the server :) 
+  function generateSessionId() {
+    let baseArray = new Int8Array(16)
+    crypto.getRandomValues(baseArray)
+    const sessionId = Buffer.from(baseArray).toString('base64')
+
+    return sessionId
+  }
+
+  function classesForInput(field: string) {
+    var expectedValue: string | undefined;
     if (field == 'email') {
       expectedValue = form.email
     }
@@ -80,7 +103,7 @@ import CustomLoading from '../components/custom-loading.vue'
       const verification = await verifyRegistration(attResp)
 
       if (verification.verified) {
-        alert('Usuário cadastrado!')
+        alert('Usuário cadastrado com sucesso!')
         isFormSignup.value = false
       }
       else {
@@ -101,8 +124,8 @@ import CustomLoading from '../components/custom-loading.vue'
     }
   }
 
-  async function getRegistrationOptions() {
-    const response = await $fetch(API_URL + '/register/options', {
+  async function getRegistrationOptions(): Promise<PublicKeyCredentialCreationOptionsJSON> {
+    const response: PublicKeyCredentialCreationOptionsJSON = await $fetch(API_URL + '/register/options', {
       params: {
         email: form.email,
         name: form.name
@@ -112,8 +135,12 @@ import CustomLoading from '../components/custom-loading.vue'
     return response
   }
 
-  async function verifyRegistration(attResp) {
-    const response = await $fetch(API_URL + '/register/verify', {
+  interface VerifiedRegistrationResponse {
+    verified: boolean;
+  };
+
+  async function verifyRegistration(attResp: RegistrationCredentialJSON): Promise<VerifiedRegistrationResponse> {
+    const response: VerifiedRegistrationResponse = await $fetch(API_URL + '/register/verify', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -134,24 +161,15 @@ import CustomLoading from '../components/custom-loading.vue'
       return
     }
 
-
     try {
       isLoading.value = true
 
-      const options = await getAuthenticationOptions()
+      const options = await getAuthenticationOptions(form.email)
       const asseResp = await startAuthentication(options)
 
       const { token } = await verifyAuthentication(asseResp)
 
-      const auth = getAuth()
-      const credential = await signInWithCustomToken(auth, token)
-      
-      if (credential && credential.user) {
-        await navigateTo('/secret')
-      }
-      else {
-        alert('Erro ao realizar o login :(')
-      }
+      await firebaseLogin(token)
       
       isLoading.value = false
     }
@@ -167,29 +185,58 @@ import CustomLoading from '../components/custom-loading.vue'
     }
   }
 
-  async function getAuthenticationOptions() {
-    const response = await $fetch(API_URL + '/login/options', {
-      params: {
-        email: form.email
-      }
+  interface AuthenticationOptionsParams {
+    sessionId: string,
+    email?: string
+  }
+
+  async function getAuthenticationOptions(email?: string): Promise<PublicKeyCredentialRequestOptionsJSON> {
+    let params: AuthenticationOptionsParams = {
+      sessionId,
+    }
+
+    // Only add an e-mail to the params if it is not empty
+    if (email) {
+      params.email = email
+    }
+
+    const response: PublicKeyCredentialRequestOptionsJSON = await $fetch(API_URL + '/login/options', {
+      params: params
     })
 
     return response
   }
 
-  async function verifyAuthentication(asseResp) {
-    const response = await $fetch(API_URL + '/login/verify', {
+  interface FirebaseCustomTokenResponse {
+    token: string
+  }
+
+  async function verifyAuthentication(asseResp: AuthenticationCredentialJSON): Promise<FirebaseCustomTokenResponse> {
+    const response: FirebaseCustomTokenResponse = await $fetch(API_URL + '/login/verify', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: asseResp,
       params: {
+        sessionId,
         email: form.email,
       }
     })
 
     return response
+  }
+
+  async function firebaseLogin(token: string) {
+    const auth = getAuth()
+    const credential = await signInWithCustomToken(auth, token)
+    
+    if (credential && credential.user) {
+      await navigateTo('/secret')
+    }
+    else {
+      alert('Erro ao realizar o login :(')
+    }
   }
 </script>
 
