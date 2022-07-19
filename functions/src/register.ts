@@ -96,7 +96,6 @@ registerApp.post(
     const { registrationInfo } = verification;
 
     if (!verification.verified || !registrationInfo) {
-      console.log(JSON.stringify(verification))
       res.status(400).send({ error: res.__('error_registering', userEmail) })
   
       return
