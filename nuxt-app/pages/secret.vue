@@ -19,6 +19,7 @@
 <script setup>
   import { useStore } from '@/stores/user'
   import { getAuth, signOut } from 'firebase/auth'
+  import { getAnalytics, logEvent, setCurrentScreen } from 'firebase/analytics'
   
   definePageMeta({
     middleware: 'auth-middleware'

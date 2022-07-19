@@ -52,7 +52,10 @@
   import { getAnalytics, logEvent, setCurrentScreen } from 'firebase/analytics'
   import { FetchError } from 'ohmyfetch';
   import { Buffer } from 'buffer';
+  import { useI18n } from 'vue-i18n'
   import CustomLoading from '../components/custom-loading.vue'
+  
+  const { t } = useI18n()
 
   const API_URL = 'https://passkey.stapp.studio'
 
@@ -128,11 +131,11 @@
       const verification = await verifyRegistration(attResp)
 
       if (verification.verified) {
-        alert(this.$t('login.alerts.signup.success'))
+        alert(t('login.alerts.signup.success'))
         isFormSignup.value = false
       }
       else {
-        alert(this.$t('login.alerts.signup.error'))
+        alert(t('login.alerts.signup.error'))
       }
 
       isLoading.value = false
@@ -260,7 +263,7 @@
       await navigateTo('/secret')
     }
     else {
-      alert(this.$i18n('login.alerts.login.error'))
+      alert(t('login.alerts.login.error'))
     }
   }
 </script>
