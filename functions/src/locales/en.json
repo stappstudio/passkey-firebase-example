@@ -1,0 +1,9 @@
+{
+  "missing_parameters": "Missing required parameters!",
+  "email_already_registered": "%s is already registered!",
+  "email_not_registered": "%s is not registered!",
+  "error_finding_challenge": "Could not find a valid saved challenge!",
+  "error_registering": "Error registering user %s",
+  "error_finding_authenticator": "Could not find authenticator %s for user %s!",
+  "error_authenticating": "Error authenticating user %s"
+}

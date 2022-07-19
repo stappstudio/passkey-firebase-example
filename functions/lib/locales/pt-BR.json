@@ -1,0 +1,9 @@
+{
+    "missing_parameters": "Parâmetros obrigatórios não informados!",
+    "email_already_registered": "%s já está cadastrado!",
+    "email_not_registered": "%s não está cadastrado!",
+    "error_finding_challenge": "Não foi possível encontrar um desafio válido salvo!",
+    "error_registering": "Erro ao cadastrar o usuário %s",
+    "error_finding_authenticator": "Não foi possível encontrar o autenticador %s para o usuário %s!",
+    "error_authenticating": "Erro ao autenticar o usuário %s"
+}

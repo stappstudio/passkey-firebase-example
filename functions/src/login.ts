@@ -9,26 +9,29 @@ import { userEmailAlreadyRegistered, getUserCustomToken } from './data/user'
 
 import { ORIGIN, RP_ID } from './constants'
 import { PublicKeyCredentialDescriptorFuture } from '@simplewebauthn/typescript-types'
-// import { AuthenticatorDevice } from '@simplewebauthn/typescript-types'
+
+import { i18n } from './i18n'
 
 const loginApp = express()
 
 loginApp.use(express.json())
 loginApp.use(cors())
+loginApp.use(i18n.init)
 
 loginApp.get(
   ['/options', '/login/options'],
   async (req: express.Request, res: express.Response) => {
   const { email, sessionId } = req.query
 
-  // Validate mandatory parameters
-  if (!sessionId) {
-    res.status(400).send({ error: 'Missing required parameters' })
+  // We must have at least one of them
+  if (!email || !sessionId) {
+    res.status(400).send({ error: res.__('missing_parameters') })
 
     return
   }
 
-  const sessionID = sessionId as string
+  // If session id is undefined, email will work as sessionId
+  const sessionID: string = (sessionId as string | undefined) ?? (email as string)
 
   // This might be populated or not, so we need to init it here as undefined
   let allowedCredentials: PublicKeyCredentialDescriptorFuture[] | undefined
@@ -41,7 +44,7 @@ loginApp.get(
     const alreadyRegistered = await userEmailAlreadyRegistered(userEmail)
 
     if (!alreadyRegistered) {
-      res.status(400).send({ error: `${userEmail} not registered!` })
+      res.status(400).send({ error: res.__('email_not_registered', userEmail) })
 
       return
     }
@@ -76,7 +79,7 @@ loginApp.post(
 
   // Validate parameters
   if (!email || !sessionId) {
-    res.status(400).send({ error: 'Missing required parameters' })
+    res.status(400).send({ error: res.__('missing_parameters') })
 
     return
   }
@@ -88,7 +91,7 @@ loginApp.post(
     const expectedChallenge = await getChallenge(sessionID)
 
     if (!expectedChallenge) {
-      res.status(400).send({ error: 'Could not find challenge' })
+      res.status(400).send({ error: res.__('error_finding_challenge') })
   
       return
     }
@@ -98,7 +101,7 @@ loginApp.post(
     const authenticator = await getUserAuthenticator(userEmail, body.id)
 
     if (!authenticator) {
-      res.status(400).send({ error: 'Could not find authenticator ' + body.id + ' for user ' + userEmail })
+      res.status(400).send({ error: res.__('error_finding_authenticator', body.id, userEmail) })
   
       return
     }
@@ -114,14 +117,14 @@ loginApp.post(
     const { authenticationInfo } = verification;
 
     if (!verification.verified || !authenticationInfo) {
-      console.log('error :(')
-      throw Error('Error authenticating')
+      res.status(400).send({ error: res.__('error_authenticating', userEmail) })
+  
+      return
     }
 
     // TODO: Update authenticator counter on database
 
     // Retrieve token from firebase auth
-    functions.logger.info('Will retrieve user custom token')
     const customToken = await getUserCustomToken(userEmail)
 
     res.send({

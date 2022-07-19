@@ -10,53 +10,57 @@ import { userEmailAlreadyRegistered, createUser } from './data/user'
 import { ORIGIN, RP_ID, RP_NAME } from './constants'
 import { AuthenticatorDevice } from '@simplewebauthn/typescript-types'
 
+import { i18n } from './i18n'
+
 const registerApp = express()
 
 registerApp.use(express.json())
 registerApp.use(cors())
+registerApp.use(i18n.init)
 
 registerApp.get(
   ['/options', '/register/options'],
   async (req: express.Request, res: express.Response) => {
-  const { email, name } = req.query
+    const { email, name } = req.query
 
-  // Validate query parameters
-  if (!email || !name) {
-    res.status(400).send({ error: 'Missing required parameters' })
+    // Validate query parameters
+    if (!email || !name) {
+      res.status(400).send({ error: res.__('missing_parameters') })
 
-    return
+      return
+    }
+
+    const userEmail = email as string
+    const userName = name as string
+
+    // Check if user already registered on firebase
+    const alreadyRegistered = await userEmailAlreadyRegistered(userEmail)
+
+    if (alreadyRegistered) {
+      res.status(400).send({ error: res.__('email_already_registered', userEmail) })
+
+      return
+    }
+
+    try {
+      // Generate registration options
+      const options = generateRegistrationOptions({
+        rpName: RP_NAME,
+        rpID: RP_ID,
+        userID: userEmail,
+        userName,
+      })
+
+      // Save the challenge on firestore to retrieve them later
+      await saveChallenge(userEmail, options.challenge)
+
+      res.send(options)
+    }
+    catch (error) {
+      res.status(400).send(error)
+    }
   }
-
-  const userEmail = email as string
-  const userName = name as string
-
-  // Check if user already registered on firebase
-  const alreadyRegistered = await userEmailAlreadyRegistered(userEmail)
-
-  if (alreadyRegistered) {
-    res.status(400).send({ error: `${userEmail} already registered!` })
-
-    return
-  }
-
-  try {
-    // Generate registration options
-    const options = generateRegistrationOptions({
-      rpName: RP_NAME,
-      rpID: RP_ID,
-      userID: userEmail,
-      userName,
-    })
-
-    // Save the challenge on firestore to retrieve them later
-    await saveChallenge(userEmail, options.challenge)
-
-    res.send(options)
-  }
-  catch (error) {
-    res.status(400).send(error)
-  }
-})
+)
 
 registerApp.post(
   ['/verify', '/register/verify'],
@@ -65,7 +69,7 @@ registerApp.post(
 
   // Validate parameters
   if (!email) {
-    res.status(400).send({ error: 'Missing required parameters' })
+    res.status(400).send({ error: res.__('missing_parameters') })
 
     return
   }
@@ -77,7 +81,7 @@ registerApp.post(
     const expectedChallenge = await getChallenge(userEmail)
 
     if (!expectedChallenge) {
-      res.status(400).send({ error: 'Could not find challenge for user ' + userEmail })
+      res.status(400).send({ error: res.__('error_finding_challenge') })
   
       return
     }
@@ -93,7 +97,7 @@ registerApp.post(
 
     if (!verification.verified || !registrationInfo) {
       console.log(JSON.stringify(verification))
-      res.status(400).send({ error: 'Error verifying info for user ' + userEmail })
+      res.status(400).send({ error: res.__('error_registering', userEmail) })
   
       return
     }
