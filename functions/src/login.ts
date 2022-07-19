@@ -24,7 +24,7 @@ loginApp.get(
   const { email, sessionId } = req.query
 
   // We must have at least one of them
-  if (!email || !sessionId) {
+  if (!email && !sessionId) {
     res.status(400).send({ error: res.__('missing_parameters') })
 
     return
