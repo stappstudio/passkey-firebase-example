@@ -1,0 +1,29 @@
+{
+  "login": {
+    "form": {
+      "name": "Nome",
+      "email": "E-mail",
+      "mandatory": "Campo obrigatório",
+      "password": "Senha",
+      "password_is_outdated": "Senha? Pra quê isso?",
+      "signup": "Cadastrar-se",
+      "login": "Fazer Login",
+      "already_signed_up": "Já tenho cadastro",
+      "not_signed_up": "Ainda não tenho cadastro"
+    },
+    "alerts": {
+      "signup": {
+        "success": "Usuário cadastrado com sucesso",
+        "error": "Ocorreu um erro ao cadastrar :("
+      },
+      "login": {
+        "error": "Erro ao realizar o login :("
+      }
+    }
+  },
+  "secret": {
+    "logged_with_passkey": "Você está vendo essa tela porque fez login com uma chave-senha!",
+    "user_email": "E-mail cadastrado",
+    "logout": "Sair"
+  }
+}

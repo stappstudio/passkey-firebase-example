@@ -1,0 +1,29 @@
+{
+  "login": {
+    "form": {
+      "name": "Name",
+      "email": "E-mail",
+      "mandatory": "Mandatory field",
+      "password": "Password",
+      "password_is_outdated": "Password? What is that?",
+      "signup": "Signup",
+      "login": "Login",
+      "already_signed_up": "I've already signed up",
+      "not_signed_up": "I'm still not signed up"
+    },
+    "alerts": {
+      "signup": {
+        "success": "User signed up successfully!",
+        "error": "An error ocurred while signin up :("
+      },
+      "login": {
+        "error": "An error ocurred while login :("
+      }
+    }
+  },
+  "secret": {
+    "logged_with_passkey": "You are seing this because you logged in with a passkey!",
+    "user_email": "User e-mail",
+    "logout": "Sign Out"
+  }
+}

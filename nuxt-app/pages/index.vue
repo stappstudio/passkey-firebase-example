@@ -5,23 +5,41 @@
         <CustomLoading />
       </div>
       <img class="w-48" src="~assets/logo_1024.png" />
-      <div>
-        <label v-if="isFormSignup" class="form-label text-stapp-blue">Nome</label>
+      <div class="flex flex-col items-end">
+        <label v-if="isFormSignup" class="form-label text-stapp-blue">
+          {{ $t('login.form.name') }}
+        </label>
         <input v-if="isFormSignup" v-model="form.name" type="text" class="form-input" :class="classesForInput('name')" />
-        <label class="form-error" :class="{ hidden: !(isFormSignup && hasPressedAnySubmitButton && !form.name) }">Campo obrigatório</label>
+        <label class="form-error" :class="{ hidden: !(isFormSignup && hasPressedAnySubmitButton && !form.name) }">
+          {{ $t('login.form.mandatory') }}
+        </label>
       </div>
       <div class="flex flex-col items-end">
-        <label class="form-label text-stapp-blue">E-mail</label>
+        <label class="form-label text-stapp-blue">
+          {{ $t('login.form.email') }}
+        </label>
         <input v-model="form.email" autocomplete="webauthn" type="text" class="w-full form-input" :class="classesForInput('email')" />
-        <label class="form-error" :class="{ hidden: !(hasPressedAnySubmitButton && !form.email) }">Campo obrigatório</label>
+        <label class="form-error" :class="{ hidden: !(hasPressedAnySubmitButton && !form.email) }">
+          {{ $t('login.form.mandatory') }}
+        </label>
       </div>
-      <label class="form-label opacity-30 text-stapp-blue">Senha</label>
-      <input type="text" value="Senha? Pra quê isso?" disabled class="opacity-30 form-input focus:outline-stapp-pink"  />
+      <label class="form-label opacity-30 text-stapp-blue">
+        {{ $t('login.form.password') }}
+      </label>
+      <input type="text" :value="$t('login.form.password_is_outdated')" disabled class="opacity-30 form-input focus:outline-stapp-pink"  />
       <div class="w-full flex flex-col mt-4">
-        <button v-if="isFormSignup" class="form-button bg-stapp-blue" @click="register">Cadastrar-se</button>
-        <button v-else class="form-button bg-stapp-pink" @click="login">Fazer Login</button>
-        <button v-if="isFormSignup" class="text-stapp-pink mt-4 hover:underline" @click="isFormSignup = false">Já tenho cadastro</button>
-        <button v-else class="text-stapp-blue mt-4 hover:underline" @click="isFormSignup = true">Ainda não tenho cadastro</button>
+        <button v-if="isFormSignup" class="form-button bg-stapp-blue" @click="register">
+          {{ $t('login.form.signup') }}
+        </button>
+        <button v-else class="form-button bg-stapp-pink" @click="login">
+          {{ $t('login.form.login') }}
+        </button>
+        <button v-if="isFormSignup" class="text-stapp-pink mt-4 hover:underline" @click="isFormSignup = false">
+          {{ $t('login.form.already_signed_up') }}
+        </button>
+        <button v-else class="text-stapp-blue mt-4 hover:underline" @click="isFormSignup = true">
+          {{ $t('login.form.not_signed_up') }}
+        </button>
       </div>
     </div>
   </div>
@@ -31,6 +49,7 @@
   import { startRegistration, startAuthentication } from '@simplewebauthn/browser'
   import { AuthenticationCredentialJSON, PublicKeyCredentialCreationOptionsJSON, PublicKeyCredentialRequestOptionsJSON, RegistrationCredentialJSON } from '@simplewebauthn/typescript-types'
   import { getAuth, signInWithCustomToken } from 'firebase/auth'
+  import { getAnalytics, logEvent, setCurrentScreen } from 'firebase/analytics'
   import { FetchError } from 'ohmyfetch';
   import { Buffer } from 'buffer';
   import CustomLoading from '../components/custom-loading.vue'
@@ -50,6 +69,12 @@
 
   // View functions
   onMounted(async () => {
+    // Log an screen view
+    const analytics = getAnalytics()
+    setCurrentScreen(analytics, 'login')
+    logEvent(analytics, 'screen_view')
+
+    // Attemp to autocomplete
     const options = await getAuthenticationOptions(undefined)
     const asseResp = await startAuthentication(options, true)
 
@@ -103,11 +128,11 @@
       const verification = await verifyRegistration(attResp)
 
       if (verification.verified) {
-        alert('Usuário cadastrado com sucesso!')
+        alert(this.$t('login.alerts.signup.success'))
         isFormSignup.value = false
       }
       else {
-        alert('Ocorreu um erro ao cadastrar')
+        alert(this.$t('login.alerts.signup.error'))
       }
 
       isLoading.value = false
@@ -235,7 +260,7 @@
       await navigateTo('/secret')
     }
     else {
-      alert('Erro ao realizar o login :(')
+      alert(this.$i18n('login.alerts.login.error'))
     }
   }
 </script>

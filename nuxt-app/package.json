@@ -8,6 +8,7 @@
     "deploy": "npm run generate && firebase deploy --only hosting"
   },
   "devDependencies": {
+    "@intlify/nuxt3": "^0.2.3",
     "@nuxtjs/tailwindcss": "^5.3.0",
     "@simplewebauthn/typescript-types": "^5.3.0",
     "nuxt": "3.0.0-rc.5"
