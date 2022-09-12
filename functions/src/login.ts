@@ -60,7 +60,7 @@ loginApp.get(
   try {
     const options = generateAuthenticationOptions({
       allowCredentials: allowedCredentials,
-      userVerification: 'preferred'
+      userVerification: 'required'
     })
 
     await saveChallenge(sessionID, options.challenge)
@@ -106,12 +106,13 @@ loginApp.post(
       return
     }
 
-    const verification = verifyAuthenticationResponse({
+    const verification = await verifyAuthenticationResponse({
       credential: req.body,
       expectedChallenge,
       expectedOrigin: ORIGIN,
       expectedRPID: RP_ID,
-      authenticator
+      authenticator,
+      requireUserVerification: true,
     })
 
     const { authenticationInfo } = verification;

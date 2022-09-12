@@ -49,6 +49,10 @@ registerApp.get(
         rpID: RP_ID,
         userID: userEmail,
         userName,
+        authenticatorSelection: {
+          residentKey: 'required',
+          userVerification: 'required'
+        }
       })
 
       // Save the challenge on firestore to retrieve them later
@@ -90,7 +94,8 @@ registerApp.post(
       credential: req.body,
       expectedChallenge,
       expectedOrigin: ORIGIN,
-      expectedRPID: RP_ID
+      expectedRPID: RP_ID,
+      requireUserVerification: true,
     })
 
     const { registrationInfo } = verification;
