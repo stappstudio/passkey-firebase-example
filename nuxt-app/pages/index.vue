@@ -204,6 +204,7 @@
     catch (error) {
       if (error instanceof FetchError) {
         alert(error.data.error)
+        isLoading.value = false
       }
       else {
         console.log(error)

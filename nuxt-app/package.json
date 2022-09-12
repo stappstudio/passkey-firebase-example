@@ -10,12 +10,12 @@
   "devDependencies": {
     "@intlify/nuxt3": "^0.2.3",
     "@nuxtjs/tailwindcss": "^5.3.0",
-    "@simplewebauthn/typescript-types": "^5.3.0",
+    "@simplewebauthn/typescript-types": "^6.0.0",
     "nuxt": "3.0.0-rc.5"
   },
   "dependencies": {
     "@pinia/nuxt": "^0.3.0",
-    "@simplewebauthn/browser": "^5.3.0",
+    "@simplewebauthn/browser": "^6.0.0",
     "firebase": "9.8.0",
     "pinia": "^2.0.16",
     "vue": "^3.2.37"
