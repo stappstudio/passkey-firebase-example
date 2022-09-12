@@ -70,6 +70,31 @@
 
   const sessionId = generateSessionId()
 
+  useHead({
+    meta: [
+      {
+        name: 'title',
+        property: 'og:title',
+        content: 'Passkey Example'
+      },
+      {
+        name: 'type',
+        property: 'og:type',
+        content: 'website'
+      },
+      {
+        name: 'description',
+        property: 'og:description',
+        content: 'A example of a signup/login using passkeys'
+      },
+      {
+        name: 'url',
+        property: 'og:url',
+        content: 'https://passkey.stapp.studio'
+      }
+    ]
+  })
+
   // View functions
   onMounted(async () => {
     // Log an screen view
